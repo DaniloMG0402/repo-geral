@@ -1,0 +1,73 @@
+-- VICARIUS
+
+WITH h AS (
+  SELECT UPPER(TRIM(hostname)) AS hostname
+  FROM public."vicarius_hosts"
+  WHERE
+    ( '${Empresa:regex}' = '.*'
+      OR COALESCE(empresa,'') ~* '${Empresa:regex}'
+    )
+    AND hostname IS NOT NULL
+    AND NOT (
+      hostname ~* '(?:^|[ _\\-])(android|iphone|ipad|ios|sm-|galaxy|moto|pixel|xiaomi|redmi|huawei|oneplus|poco)'
+    )
+
+  UNION
+  SELECT UPPER(TRIM(hostname))
+  FROM public."rapid7_hosts"
+  WHERE
+    ( '${Empresa:regex}' = '.*'
+      OR COALESCE(empresa,'') ~* '${Empresa:regex}'
+    )
+    AND hostname IS NOT NULL
+    AND NOT (
+      hostname ~* '(?:^|[ _\\-])(android|iphone|ipad|ios|sm-|galaxy|moto|pixel|xiaomi|redmi|huawei|oneplus|poco)'
+    )
+
+  UNION
+  SELECT UPPER(TRIM(hostname))
+  FROM public."cisco_amp_hosts"
+  WHERE
+    ( '${Empresa:regex}' = '.*'
+      OR COALESCE(empresa,'') ~* '${Empresa:regex}'
+    )
+    AND hostname IS NOT NULL
+    AND NOT (
+      hostname ~* '(?:^|[ _\\-])(android|iphone|ipad|ios|sm-|galaxy|moto|pixel|xiaomi|redmi|huawei|oneplus|poco)'
+    )
+
+  UNION
+  SELECT UPPER(TRIM(hostname))
+  FROM public."intune_hosts"
+  WHERE
+    ( '${Empresa:regex}' = '.*'
+      OR COALESCE(empresa,'') ~* '${Empresa:regex}'
+    )
+    AND hostname IS NOT NULL
+    AND NOT (
+      hostname ~* '(?:^|[ _\\-])(android|iphone|ipad|ios|sm-|galaxy|moto|pixel|xiaomi|redmi|huawei|oneplus|poco)'
+    )
+)
+
+SELECT
+  h.hostname AS "Hostname",
+  CASE WHEN v.hostname IS NOT NULL THEN '✅' ELSE '❌' END AS "Status",
+  'Vicarius' AS "Ferramenta",
+  CASE WHEN v.hostname IS NOT NULL THEN 'Sim' ELSE 'Não' END AS "Instalado"
+
+FROM h
+LEFT JOIN (
+  SELECT UPPER(TRIM(hostname)) AS hostname
+  FROM public."vicarius_hosts"
+  WHERE
+    ( '${Empresa:regex}' = '.*'
+      OR COALESCE(empresa,'') ~* '${Empresa:regex}'
+    )
+    AND hostname IS NOT NULL
+    AND NOT (
+      hostname ~* '(?:^|[ _\\-])(android|iphone|ipad|ios|sm-|galaxy|moto|pixel|xiaomi|redmi|huawei|oneplus|poco)'
+    )
+) v
+  ON v.hostname = h.hostname
+
+ORDER BY h.hostname;
