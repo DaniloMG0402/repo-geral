@@ -1,0 +1,49 @@
+WITH rx AS (
+  SELECT CASE
+           WHEN '${Empresa:regex}' IS NULL
+             OR '${Empresa:regex}' = ''
+             OR '${Empresa:regex}' = '.*'
+             THEN NULL          -- sem filtro
+           ELSE '${Empresa:regex}'
+         END AS re
+)
+SELECT t.ferramenta, t.total
+FROM (
+  SELECT 'Umbrella' AS ferramenta, COUNT(*)::int AS total
+  FROM public."umbrella_hosts", rx
+  WHERE rx.re IS NULL
+     OR COALESCE(empresa,'') ~* rx.re
+
+  UNION ALL
+  SELECT 'Vicarius', COUNT(*)::int
+  FROM public."vicarius_hosts", rx
+  WHERE rx.re IS NULL
+     OR COALESCE(empresa,'') ~* rx.re
+
+  UNION ALL
+  SELECT 'Cisco AMP', COUNT(*)::int
+  FROM public."cisco_amp_hosts", rx
+  WHERE rx.re IS NULL
+     OR COALESCE(empresa,'') ~* rx.re
+
+  UNION ALL
+  SELECT 'Rapid7', COUNT(*)::int
+  FROM public."rapid7_hosts", rx
+  WHERE rx.re IS NULL
+     OR COALESCE(empresa,'') ~* rx.re
+
+  UNION ALL
+  SELECT 'Intune Workstation', COUNT(*)::int
+  FROM public."intune_hosts", rx
+  WHERE (rx.re IS NULL
+         OR COALESCE(empresa,'') ~* rx.re)
+    AND COALESCE(LOWER(tipo_dispositivo),'') = 'workstation'
+
+  UNION ALL
+  SELECT 'Intune Telefone', COUNT(*)::int
+  FROM public."intune_hosts", rx
+  WHERE (rx.re IS NULL
+         OR COALESCE(empresa,'') ~* rx.re)
+    AND COALESCE(LOWER(tipo_dispositivo),'') = 'telefone'
+) AS t
+ORDER BY t.total DESC;
